@@ -1,0 +1,23 @@
+
+PLAY [Run show commands on routers] ********************************************
+
+TASK [Rendered the provided configuration with the existing running configuration] ***
+[1;35m[WARNING]: ansible-pylibssh not installed, falling back to paramiko[0m
+[0;32mok: [node][0m
+
+TASK [debug] *******************************************************************
+[0;32mok: [node] => {[0m
+[0;32m    "result": {[0m
+[0;32m        "changed": false,[0m
+[0;32m        "failed": false,[0m
+[0;32m        "rendered": [[0m
+[0;32m            "ip access-list extended 110",[0m
+[0;32m            "10 deny tcp 192.0.2.0 0.0.0.255 192.0.3.0 0.0.0.255 eq www syn dscp ef ttl eq 10",[0m
+[0;32m            "ip access-list extended 150",[0m
+[0;32m            "deny tcp 198.51.100.0 0.0.0.255 eq telnet 198.51.110.0 0.0.0.255 eq telnet syn dscp ef ttl eq 10"[0m
+[0;32m        ][0m
+[0;32m    }[0m
+[0;32m}[0m
+
+PLAY RECAP *********************************************************************
+[0;32mnode[0m                       : [0;32mok=2   [0m changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   

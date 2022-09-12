@@ -1,0 +1,6 @@
+---
+
+ansible_connection: network_cli
+ansible_network_os: ios
+ansible_user: clab
+ansible_password: clab@123
