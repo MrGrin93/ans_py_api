@@ -1,0 +1,12 @@
+- name: Run web
+  hosts: all
+  become: true
+
+  tasks:
+
+  - name: Ensure a job that runs 
+    ansible.builtin.cron:
+      name: "send keepalive"
+      weekday: "1-5"
+      hour: "18"
+      job: "gammu-smsd-inject TEXT {{ send_to }} -unicode -text 'С {{ name }} все в порядке.'"

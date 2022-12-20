@@ -1,54 +1,70 @@
 ---
 
-- name: Run show commands on routers
+- name: Run web
   hosts: all
-  gather_facts: false
+  become: true
 
   tasks:
 
-    - name: Rendered the provided configuration with the existing running configuration
-      cisco.ios.ios_acls:
-        config:
-        - afi: ipv4
-          acls:
-          - name: 110
-            aces:
-            - grant: deny
-              sequence: 10
-              protocol_options:
-                tcp:
-                  syn: true
-              source:
-                address: 192.0.2.0
-                wildcard_bits: 0.0.0.255
-              destination:
-                address: 192.0.3.0
-                wildcard_bits: 0.0.0.255
-                port_protocol:
-                  eq: www
-              dscp: ef
-              ttl:
-                eq: 10
-          - name: 150
-            aces:
-            - grant: deny
-              protocol_options:
-                tcp:
-                  syn: true
-              source:
-                address: 198.51.100.0
-                wildcard_bits: 0.0.0.255
-                port_protocol:
-                  eq: telnet
-              destination:
-                address: 198.51.110.0
-                wildcard_bits: 0.0.0.255
-                port_protocol:
-                  eq: telnet
-              dscp: ef
-              ttl:
-                eq: 10
-        state: rendered
-      register: result
+    - name: customize smsd user
+      ansible.builtin.lineinfile:
+        dest: "/etc/init.d/gammu-smsd"
+        state: present
+        regexp: "^USER="
+        insertafter: '^# user which will run this daemon'
+        line: USER=root
 
-    - debug: var=result
+    - name: Start service
+      service: name=gammu-smsd state=restarted enabled=yes
+
+    - name: Create named pipe
+      command:
+        cmd: mkfifo /home/pi/listener
+        creates: /home/pi/listener
+    
+    - name: Copy script
+      template: src=lis_crpt.sh.j2 dest=/home/pi/lis_crpt.sh mode=777
+
+    - name: Create Unit file
+      template: src=dc_listener.service.j2 dest=/etc/systemd/system/dc_listener.service mode=644
+      notify:
+        - systemctl daemon-reload
+    
+    - name: Start service
+      service: name=dc_listener.service state=started enabled=yes
+
+    - name: customize /etc/environment
+      ansible.builtin.lineinfile:
+        dest: "/etc/environment"
+        state: present
+        regexp: "^CHECK_B="
+        line: "CHECK_B={{ check_b }}"
+
+    - name: customize /etc/environment
+      ansible.builtin.lineinfile:
+        dest: "/etc/environment"
+        state: present
+        regexp: "^TRAEF_NAME="
+        line: "TRAEF_NAME={{ name }}"
+    
+    - name: git pull
+      ansible.builtin.git:
+        repo: 'https://github.com/MrGrin93/sms_for_pi.git'
+        dest: /home/pi/sms_for_pi
+        version: prod
+
+    - name: Ensure docker library is present.
+      pip:
+        name: docker
+        state: present
+
+    - name: Ensure docker-compose library is present.
+      pip:
+        name: docker-compose
+        state: present
+
+    - name: Create and start services
+      community.docker.docker_compose:
+        project_src: /home/pi/sms_for_pi
+        build: true
+      register: output
